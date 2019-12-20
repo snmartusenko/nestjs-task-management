@@ -8,6 +8,7 @@ import { TaskRepository } from './task.repository';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from './task.entity';
 import { DeleteResult } from 'typeorm';
+import { User } from '../auth/user.entity';
 
 @Injectable()
 export class TasksService {
@@ -17,23 +18,23 @@ export class TasksService {
   ) {
   }
 
-  async getTasks(filterDto: GetTasksFilterDto): Promise<Task[]> {
-    return await this.taskRepository.getTasks(filterDto);
+  async getTasks(filterDto: GetTasksFilterDto, user: User): Promise<Task[]> {
+    return await this.taskRepository.getTasks(filterDto, user);
   }
 
-  async createTask(createTaskDto: CreateTaskDto): Promise<Task> {
-    return this.taskRepository.createTask(createTaskDto);
+  async createTask(createTaskDto: CreateTaskDto, user: User): Promise<Task> {
+    return this.taskRepository.createTask(createTaskDto, user);
   }
 
-  async getTaskById(id: number): Promise<Task> {
-    const model = await this.taskRepository.findOne(id);
+  async getTaskById(id: number, user: User): Promise<Task> {
+    const model = await this.taskRepository.findOne({ where: { id, userId: user.id } });
     if (!model) {
       throw new NotFoundException();
     }
     return model;
   }
 
-  async deleteTaskById(id: number) {
+  async deleteTaskById(id: number, user: User) {
     // 1
     // const model = await Task.findOne(id);
     // if (!model) {
@@ -46,7 +47,7 @@ export class TasksService {
     // return await this.taskRepository.delete(id); // return affected rows
 
     // 3
-    let result = await this.taskRepository.delete(id);
+    let result = await this.taskRepository.delete({ id, userId: user.id });
     if (result.affected === 0) {
       throw new NotFoundException();
     } else {
@@ -55,8 +56,13 @@ export class TasksService {
 
   }
 
-  async updateTaskPropertyByNameAndId(id: number, property: string, value: string): Promise<Task> {
-    let model = await this.getTaskById(id);
+  async updateTaskPropertyByNameAndId(
+    id: number,
+    property: string,
+    value: string,
+    user: User,
+  ): Promise<Task> {
+    let model = await this.getTaskById(id, user);
     if (model) {
       model[property] = value;
       await model.save();
