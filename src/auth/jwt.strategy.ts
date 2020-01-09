@@ -5,6 +5,9 @@ import { UserRepository } from './user.repository';
 import { JwtPayload } from './jwt-payload.interface';
 import { User } from './user.entity';
 import { UnauthorizedException } from '@nestjs/common';
+import * as config from 'config';
+
+const jwtConfig = config.get('jwt');
 
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -13,7 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: 'keybordCat_fbfnnnfgnbh5353$345',
+      secretOrKey: process.env.JWT_SECRET || jwtConfig.secret,
     });
   }
 
